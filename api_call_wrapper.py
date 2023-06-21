@@ -5,7 +5,7 @@ import requests
 import os
 from pydantic import SecretStr
 
-class APIWrapper:
+class Client:
   def __init__(self, host: str, token: SecretStr):
     self.host = host.rstrip("/") + "/"
     self._token = token
@@ -48,9 +48,9 @@ class APIWrapper:
     return out
  
 # Example usage
-api_wrapper = APIWrapper(
+client = Client(
  host='XXX',
  token='XXX'
 )
-warehouse_information = api_wrapper.get_warehouse_connection_details('123').json()
+warehouse_information = client.get_warehouse_connection_details('123').json()
 print(warehouse_information)
