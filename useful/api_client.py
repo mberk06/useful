@@ -31,6 +31,18 @@ _ALLOWED_HTTP_COMMANDS = {"GET", "POST", "PUT", "DELETE"}
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def _is_retryable_exception(retry_state):
+    exception = retry_state.outcome.exception()
+    return (
+        isinstance(exception, HTTPError)
+        and exception.response.status_code in _TRANSIENT_FAILURE_RESPONSE_CODES
+    )
+
+def _url_is_valid(url: str) -> bool:
+    result = urlparse(url)
+    return all([result.netloc, result.scheme, result.path])
+
+
 
 class Client:
     def __init__(self, host: str, token: SecretStr):
@@ -44,19 +56,6 @@ class Client:
     @property
     def token(self):
         return self._token.get_secret_value()
-
-    @staticmethod
-    def _is_retryable_exception(retry_state):
-        exception = retry_state.outcome.exception()
-        return (
-            isinstance(exception, HTTPError)
-            and exception.response.status_code in _TRANSIENT_FAILURE_RESPONSE_CODES
-        )
-
-    @staticmethod
-    def _url_is_valid(url: str) -> bool:
-        result = urlparse(url)
-        return all([result.netloc, result.scheme, result.path])
 
     @retry(
         stop=stop_after_attempt(_MAX_RETRY_COUNT),
@@ -79,7 +78,7 @@ class Client:
         auth = {"Authorization": f"Bearer {self.token}"}
         url = os.path.join(self.host, endpoint.lstrip("/"))
         print(url)
-        if self._url_is_valid(url):
+        if _url_is_valid(url):
             with requests.Session() as session:
                 logger.info(f"Making a {http_command} request to {url}")
 
