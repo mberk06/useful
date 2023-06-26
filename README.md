@@ -13,7 +13,6 @@ Here are the core advantages of using this over the basic requests library:
 * **Retrying Mechanism**: retry logic is built in. Max retries is `5` and there is exponential backoff.
 * **Logging**: API calls, retries, and errors are logged.
 
-### Example Usage 
 ```python
 from pydantic import SecretStr
 from useful import Client
