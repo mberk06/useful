@@ -25,7 +25,7 @@ _TRANSIENT_FAILURE_RESPONSE_CODES = frozenset(
     ]
 )
 _MAX_RETRY_COUNT = 3
-_ALLOWED_HTTP_COMMANDS = frozenset("GET", "POST", "PUT", "DELETE")
+_ALLOWED_HTTP_COMMANDS = {"GET", "POST", "PUT", "DELETE"}
 
 # Create a logger
 logging.basicConfig(level=logging.INFO)
