@@ -8,5 +8,5 @@ setup(
     author_email="michaelberk99@gmail.com",
     description="Code I use a lot.",
     packages=find_packages(),
-    install_requires=["requests", "tenacity"],
+    install_requires=["requests", "tenacity", "pydantic"],
 )
