@@ -1,11 +1,12 @@
 # This code wraps API calls, specifically for the Databricks API. It extends to other APIs thare are authenticated via a token in the header.
 
 import os
+from urllib.parse import urlparse
 import requests
 from requests.exceptions import HTTPError
-import tenacity
-from tenacity import retry, wait_exponential, stop_after_attempt
-from urllib.parse import urlparse
+from tenacity import retry, stop_after_attempt, wait_exponential, before_log, after_log
+
+import logging
 
 from pydantic import SecretStr
 from typing import Type
@@ -24,7 +25,11 @@ _TRANSIENT_FAILURE_RESPONSE_CODES = frozenset(
     ]
 )
 _MAX_RETRY_COUNT = 3
+_ALLOWED_HTTP_COMMANDS = frozenset("GET", "POST", "PUT", "DELETE")
 
+# Create a logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class Client:
     def __init__(self, host: str, token: SecretStr):
@@ -61,14 +66,21 @@ class Client:
         :param json: Optional dictionary containing JSON data to send with the HTTP request. Default is an empty dictionary.
         :return: The JSON response from the server as a dictionary.
         """
-        
+        if http_command.upper() not in self._ALLOWED_HTTP_COMMANDS:
+            logger.error(f"{http_command} is not a valid HTTP command.")
+            raise ValueError(f"{http_command} is not a valid HTTP command.")
+            
         auth = {"Authorization": f"Bearer {self.token}"}
         url = os.path.join(self.host, endpoint.lstrip("/"))
         print(url)
         if self._url_is_valid(url):
             with requests.Session() as session:
+                logger.info(f"Making a {http_command} request to {url}")
+
                 response = session.request(http_command, url, headers=auth, json=json)
                 response.raise_for_status()
-                return response.json()
+                return response.json() or {}
         else:
-            raise ValueError(f"{url} is not a valid format.")
+            error_str = f"{url} is not a valid URL format."
+            logger.error(error_str)
+            raise ValueError(error_str)
