@@ -28,8 +28,15 @@ _MAX_RETRY_COUNT = 3
 _ALLOWED_HTTP_COMMANDS = {"GET", "POST", "PUT", "DELETE"}
 
 # Create a logger
+
+class IgnoreInfoFilter(logging.Filter):
+    def filter(self, record):
+        return 'Received command c on object id p0' not in record.getMessage()
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+logger.addFilter(IgnoreInfoFilter())
+
 
 def _is_retryable_exception(retry_state):
     exception = retry_state.outcome.exception()
