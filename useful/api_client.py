@@ -53,6 +53,15 @@ class Client:
         retry=_is_retryable_exception,
     )
     def _execute(self, endpoint: str, http_command: str, json: dict = {}) -> dict:
+        """
+        This method makes a request to the host URL joined with the provided endpoint and returns the JSON response.
+        If the provided URL is invalid, it raises a ValueError.
+        :param endpoint: The API endpoint to execute the HTTP command against.
+        :param http_command: The HTTP command (e.g., "GET", "POST", "PUT", "DELETE") to execute.
+        :param json: Optional dictionary containing JSON data to send with the HTTP request. Default is an empty dictionary.
+        :return: The JSON response from the server as a dictionary.
+        """
+        
         auth = {"Authorization": f"Bearer {self.token}"}
         url = os.path.join(self.host, endpoint.lstrip("/"))
         print(url)
