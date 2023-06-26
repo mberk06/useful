@@ -7,10 +7,11 @@
 This api client is a wrapper around the `requests` library and provides the following functionality. To implement, you should follow steps 1-4 in the comments below.
 
 Here are the core advantages of using this over the basic requests library:
-* Session Management: by leveraging a context manager, request sessions will be properly closed. 
-* Auth Management: by simply passing a token in a SecretStr, you don't have to think about auth after that.
-* Error Handling: there is built-in logic to identify retryable exceptions based on HTTP error codes.
-* Retrying Mechanism: retry logic is built in. Max retries is `5` and there is exponential backoff.
+* **Session Management**: by leveraging a context manager, request sessions will be properly closed. 
+* **Auth Management**: by simply passing a token in a SecretStr, you don't have to think about auth after that.
+* **Error Handling**: there is built-in logic to identify retryable exceptions based on HTTP error codes.
+* **Retrying Mechanism**: retry logic is built in. Max retries is `5` and there is exponential backoff.
+* **Logging**: API calls, retries, and errors are logged.
 
 ### Example Usage 
 ```python
