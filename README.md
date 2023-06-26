@@ -38,3 +38,16 @@ databricks_client = DatabricksClient(
 warehouse_list = databricks_client.get_warehouse_list()
 print(warehouse_list)
 ```
+
+## useful/add_to_databricks_secrets.py 
+This module lets you add a secret to a given workspace's secrets API. It's most secure to 
+run this in a CLI on your local machine because notebooks auto-save and thereby will store your 
+credentials, but you can technically run this anywhere.
+
+```python
+from pydantic import SecretStr
+from useful import AddSecretToDatabricksAPI
+
+databricks_client = AddSecretToDatabricksAPI(host="XXX", token=SecretStr("XXX"))
+databricks_client.put_secret_safe(scope="berk", key="pat", value=SecretStr("XXX"))
+```
