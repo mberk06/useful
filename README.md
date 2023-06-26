@@ -23,7 +23,7 @@ class DatabricksClient(Client):
 
     # Step 1: add use-case-specific methods here
     def get_warehouse_list(self) -> dict:
-        return self._execute(
+        return self.execute(
             http_command="GET",
             endpoint="/api/2.0/sql/warehouses",
         )
