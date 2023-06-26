@@ -27,17 +27,11 @@ _TRANSIENT_FAILURE_RESPONSE_CODES = frozenset(
 _MAX_RETRY_COUNT = 3
 _ALLOWED_HTTP_COMMANDS = {"GET", "POST", "PUT", "DELETE"}
 
-# Create a logger
-
-class IgnoreInfoFilter(logging.Filter):
-    def filter(self, record):
-        return 'Received command c on object id p0' not in record.getMessage()
-
+# create logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-logger.addFilter(IgnoreInfoFilter())
 
-
+# url parsing helpers
 def _is_retryable_exception(retry_state):
     exception = retry_state.outcome.exception()
     return (
@@ -49,8 +43,7 @@ def _url_is_valid(url: str) -> bool:
     result = urlparse(url)
     return all([result.netloc, result.scheme, result.path])
 
-
-
+# main class
 class Client:
     def __init__(self, host: str, token: SecretStr):
         self.host = host.rstrip("/") + "/"
