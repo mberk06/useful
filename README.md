@@ -17,27 +17,23 @@ Here are the core advantages of using this over the basic requests library:
 from pydantic import SecretStr
 from useful import Client
 
-# Step 1: add your host name
-def get_host():
-    return "YOUR_DATABRICKS_WORKSPACE_URL"
-
-# Step 2: update this to a PAT (ideally in the secrets API)
-def get_token():
-    return SecretStr(dbutils.secrets.get(scope="berk-scope", key="pat"))
-
 class DatabricksClient(Client):
     def __init__(self, host: str, token: SecretStr):
         super().__init__(host, token)
 
-    # Step 3: add use-case-specific methods here
+    # Step 1: add use-case-specific methods here
     def get_warehouse_list(self) -> dict:
         return self._execute(
             http_command="GET",
             endpoint="/api/2.0/sql/warehouses",
         )
     
-# Step 4: call them via a session manager
-with DatabricksClient(get_host(), get_token()) as databricks_client:
-    warehouse_list = databricks_client.get_warehouse_list()
-    print(warehouse_list)
+databricks_client = DatabricksClient(
+    host="YOUR_DATABRICKS_WORKSPACE_URL", # Step 2: add databricks host
+    token=SecretStr(dbutils.secrets.get(scope="berk-scope", key="pat")) # Step 3: add your PAT as a SecretStr
+)
+
+# Step 4: call the functions
+warehouse_list = databricks_client.get_warehouse_list()
+print(warehouse_list)
 ```
