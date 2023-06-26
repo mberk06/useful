@@ -23,13 +23,20 @@ _TRANSIENT_FAILURE_RESPONSE_CODES = frozenset(
         504,  # Gateway Timeout
     ]
 )
+_MAX_RETRY_COUNT = 3
 
 
 class Client:
     def __init__(self, host: str, token: SecretStr):
         self.host = host.rstrip("/") + "/"
         self._token = token
+
+    def __enter__(self):
         self.session = requests.Session()
+        return self
+
+    def __exit__(self):
+        self.session.close()
 
     @property
     def token(self):
@@ -48,7 +55,7 @@ class Client:
         return all([result.netloc, result.scheme, result.path])
 
     @retry(
-        stop=stop_after_attempt(5),
+        stop=stop_after_attempt(_MAX_RETRY_COUNT),
         wait=wait_exponential(multiplier=2, min=1, max=15),
         retry=_is_retryable_exception,
     )
@@ -62,20 +69,3 @@ class Client:
             return response.json()
         else:
             raise ValueError(f"{url} is not a valid format.")
-
-    def get_warehouse_list(self) -> requests.Response:
-        """
-        Example call to get a Databricks SQL warehouse connection information.
-        """
-        return self._execute(
-            http_command="GET",
-            endpoint="/api/2.0/sql/warehouses",
-        )
-
-
-# Example usage
-client = Client(
-    host="XXX", token=SecretStr(dbutils.secrets.get(scope="berk-scope", key="pat"))
-)
-warehouse_list = client.get_warehouse_list()
-print(warehouse_list)
