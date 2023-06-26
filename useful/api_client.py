@@ -52,7 +52,7 @@ class Client:
         wait=wait_exponential(multiplier=2, min=1, max=15),
         retry=_is_retryable_exception,
     )
-    def _execute(self, endpoint: str, http_command: str, json: dict = {}) -> dict:
+    def execute(self, endpoint: str, http_command: str, json: dict = {}) -> dict:
         auth = {"Authorization": f"Bearer {self.token}"}
         url = os.path.join(self.host, endpoint.lstrip("/"))
         print(url)
