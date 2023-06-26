@@ -1,5 +1,5 @@
 # Quick Start
-1. `pip install git+https://github.com/mberk06/useful.git`
+1. `pip install -q git+https://github.com/mberk06/useful.git`
 2. Run one of the exmaple usages below
 
 # Files
