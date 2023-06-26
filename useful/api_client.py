@@ -31,13 +31,6 @@ class Client:
         self.host = host.rstrip("/") + "/"
         self._token = token
 
-    def __enter__(self):
-        self.session = requests.Session()
-        return self
-
-    def __exit__(self):
-        self.session.close()
-
     @property
     def token(self):
         return self._token.get_secret_value()
@@ -64,8 +57,9 @@ class Client:
         url = os.path.join(self.host, endpoint.lstrip("/"))
         print(url)
         if self._url_is_valid(url):
-            response = self.session.request(http_command, url, headers=auth, json=json)
-            response.raise_for_status()
-            return response.json()
+            with requests.Session() as session:
+                response = session.request(http_command, url, headers=auth, json=json)
+                response.raise_for_status()
+                return response.json()
         else:
             raise ValueError(f"{url} is not a valid format.")
