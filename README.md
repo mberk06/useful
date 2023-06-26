@@ -12,7 +12,7 @@ This api client provides the following benefits, especially in a databricks envi
 * Request Execution: It provides a method to execute an HTTP request to the server and handle the response.
 
 ### Example Usage 
-```
+```python
 from pydantic import SecretStr
 from useful import Client
 
