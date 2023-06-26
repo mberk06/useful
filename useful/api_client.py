@@ -66,7 +66,7 @@ class Client:
         :param json: Optional dictionary containing JSON data to send with the HTTP request. Default is an empty dictionary.
         :return: The JSON response from the server as a dictionary.
         """
-        if http_command.upper() not in self._ALLOWED_HTTP_COMMANDS:
+        if http_command.upper() not in _ALLOWED_HTTP_COMMANDS:
             logger.error(f"{http_command} is not a valid HTTP command.")
             raise ValueError(f"{http_command} is not a valid HTTP command.")
             
