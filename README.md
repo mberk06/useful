@@ -13,6 +13,7 @@ This api client provides the following benefits, especially in a databricks envi
 
 ### Example Usage 
 ```
+from pydantic import SecretStr
 from useful import Client
 
 class DatabricksClient(Client):
