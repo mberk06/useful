@@ -1,4 +1,4 @@
-from api_client import Client
+from useful.api_client import Client
 from pydantic import SecretStr
 import requests
 
