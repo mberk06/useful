@@ -31,15 +31,21 @@ _ALLOWED_HTTP_COMMANDS = {"GET", "POST", "PUT", "DELETE"}
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 class Client:
     def __init__(self, host: str, token: SecretStr):
         self.host = host.rstrip("/") + "/"
+
+        assert isinstance(
+            token, SecretStr
+        ), "The token must be of type pydantic.SecretStr"
         self._token = token
 
     @property
     def token(self):
         return self._token.get_secret_value()
 
+    @staticmethod
     def _is_retryable_exception(retry_state):
         exception = retry_state.outcome.exception()
         return (
@@ -69,7 +75,7 @@ class Client:
         if http_command.upper() not in _ALLOWED_HTTP_COMMANDS:
             logger.error(f"{http_command} is not a valid HTTP command.")
             raise ValueError(f"{http_command} is not a valid HTTP command.")
-            
+
         auth = {"Authorization": f"Bearer {self.token}"}
         url = os.path.join(self.host, endpoint.lstrip("/"))
         print(url)
