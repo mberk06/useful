@@ -1,29 +1,20 @@
 # This code wraps API calls, specifically for the Databricks API. It extends to other APIs thare are authenticated via a token in the header.
 
 import os
-from urllib.parse import urlparse
 import requests
-from requests.exceptions import HTTPError
+import logging
+from pydantic import SecretStr
+from functools import partial
+
 from tenacity import retry, stop_after_attempt, wait_exponential, before_log, after_log
 
-import logging
-
-from pydantic import SecretStr
-from typing import Type
-
-# Response codes that generally indicate transient network failures and merit client retries,
-# based on guidance from cloud service providers
-# (https://docs.microsoft.com/en-us/azure/architecture/best-practices/retry-service-specific#general-rest-and-retry-guidelines)
-_TRANSIENT_FAILURE_RESPONSE_CODES = frozenset(
-    [
-        408,  # Request Timeout
-        429,  # Too Many Requests
-        500,  # Internal Server Error
-        502,  # Bad Gateway
-        503,  # Service Unavailable
-        504,  # Gateway Timeout
-    ]
+from utils.http_utils import (
+    is_retryable_exception,
+    url_is_valid,
+    TRANSIENT_FAILURE_RESPONSE_CODES,
 )
+
+
 _MAX_RETRY_COUNT = 3
 _ALLOWED_HTTP_COMMANDS = {"GET", "POST", "PUT", "DELETE"}
 
@@ -31,20 +22,11 @@ _ALLOWED_HTTP_COMMANDS = {"GET", "POST", "PUT", "DELETE"}
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# url parsing helpers
-def _is_retryable_exception(retry_state):
-    exception = retry_state.outcome.exception()
-    return (
-        isinstance(exception, HTTPError)
-        and exception.response.status_code in _TRANSIENT_FAILURE_RESPONSE_CODES
-    )
-
-def _url_is_valid(url: str) -> bool:
-    result = urlparse(url)
-    return all([result.netloc, result.scheme, result.path])
 
 # main class
 class Client:
+    wait_func: callable = None
+
     def __init__(self, host: str, token: SecretStr):
         self.host = host.rstrip("/") + "/"
 
@@ -59,8 +41,12 @@ class Client:
 
     @retry(
         stop=stop_after_attempt(_MAX_RETRY_COUNT),
-        wait=wait_exponential(multiplier=2, min=1, max=15),
-        retry=_is_retryable_exception,
+        wait=wait_exponential(multiplier=3, min=1, max=10),
+        retry=partial(
+            is_retryable_exception, retry_codes=TRANSIENT_FAILURE_RESPONSE_CODES
+        ),
+        before=before_log(logger, logging.INFO),  # log before a retry
+        after=after_log(logger, logging.INFO),  # log after a retry
     )
     def _execute(self, endpoint: str, http_command: str, json: dict = {}) -> dict:
         """
@@ -77,8 +63,7 @@ class Client:
 
         auth = {"Authorization": f"Bearer {self.token}"}
         url = os.path.join(self.host, endpoint.lstrip("/"))
-        print(url)
-        if _url_is_valid(url):
+        if url_is_valid(url):
             with requests.Session() as session:
                 logger.info(f"Making a {http_command} request to {url}")
 
