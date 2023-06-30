@@ -1,14 +1,16 @@
 import pytest
-from unittest import mock
-from unittest.mock import MagicMock
-from requests.models import Response
-from requests.exceptions import HTTPError
+from unittest.mock import MagicMock, Mock, patch
 from pydantic import SecretStr
 
+import tenacity
+from requests import Response
+from requests.exceptions import HTTPError
+
 from useful import Client
+from utils.http_utils import is_retryable_exception
 
 HOST = "https://blueberries.are.cool.gov"
-TOKEN_STR = "SHHHHHH"
+TOKEN_STR = "hush!"
 ENDPOINT = "/api/2.1/salmon-avocado-roll"
 
 
@@ -24,56 +26,81 @@ def test_string_token_raises():
         Client(HOST, TOKEN_STR)
 
 
-def test_is_retryable_exception_is_retryable(client):
-    mock_retry_state = MagicMock()
-    mock_retry_state.outcome.exception.return_value = HTTPError("An error occurred")
-    mock_retry_state.outcome.exception.return_value.response = Response()
-    mock_retry_state.outcome.exception.return_value.response.status_code = 500
+def test_retry_success(client):
+    with patch("requests.Session") as mock_session:
+        failed_response = Mock(spec=Response)
+        failed_response.raise_for_status.side_effect = HTTPError("Error message")
+        failed_response.status_code = 500
 
-    assert client._is_retryable_exception(mock_retry_state)
+        success_payload = {"pan": "cakes"}
+        successful_response = Mock(spec=Response)
+        successful_response.raise_for_status.return_value = None
+        successful_response.json.return_value = success_payload
 
-
-def test_is_retryable_exception_non_retryable_status_code(client):
-    mock_retry_state = MagicMock()
-    mock_retry_state.outcome.exception.return_value = HTTPError("An error occurred")
-    mock_retry_state.outcome.exception.return_value.response = Response()
-    mock_retry_state.outcome.exception.return_value.response.status_code = 400
-
-    assert not client._is_retryable_exception(mock_retry_state)
-
-
-def test_url_is_valid(client):
-    assert client._url_is_valid("https://validurl.com/path")
-    assert client._url_is_valid("https://validurl.com/")
-    assert not client._url_is_valid("http:/invalidurl.com")  # invalid scheme
-    assert not client._url_is_valid("https:///missingnetloc.com")  # missing netloc
-    assert not client._url_is_valid("")  # empty string
-
-
-"""
-def test_retry(client):
-    with mock.patch("requests.Session") as mock_session:
-        mock_request = mock.Mock()
-
-        # First call will raise an HTTPError, second call will succeed
-        successful_response = mock.Mock()
-        successful_response.raise_for_status.return_value = (
-            None  # So it doesn't raise an exception
-        )
-        successful_response.json.return_value = {"key": "value"}
-
-        mock_request.side_effect = [
-            HTTPError(response=mock.Mock(status_code=500)),
+        mock_session().__enter__().request.side_effect = [
+            HTTPError(response=failed_response),
             successful_response,
         ]
 
-        mock_session.return_value.request = mock_request
+        result = client._execute(http_command="GET", endpoint=ENDPOINT)
+        assert result == success_payload
 
-        # Call the _execute method and check the returned data
-        result = client._execute("test_endpoint", "GET")
-        assert result == {"key": "value"}
+        assert mock_session().__enter__().request.call_count == 2
 
-        # Assert that the request method was called twice (a retry happened)
-        assert mock_request.call_count == 2
 
+def test_retry_success(client):
+    with patch("requests.Session") as mock_session:
+        n_failures = 3
+        failed_response = Mock(spec=Response)
+        failed_response.raise_for_status.side_effect = HTTPError("Error message")
+        failed_response.status_code = 500
+
+        success_payload = {"pan": "cakes"}
+        successful_response = Mock(spec=Response)
+        successful_response.raise_for_status.return_value = None
+        successful_response.json.return_value = success_payload
+
+        mock_session().__enter__().request.side_effect = [
+            HTTPError(response=failed_response)
+        ] * n_failures + [
+            success_payload
+        ]  # success should never be reached
+
+        with pytest.raises(tenacity.RetryError):
+            client._execute(http_command="GET", endpoint=ENDPOINT)
+
+        assert mock_session().__enter__().request.call_count == n_failures
+
+
+"""
+def test_retry_failure(client):
+    with patch("requests.Session") as mock_session:
+        n_failures = 1
+
+        failed_response = Mock(spec=Response)
+        failed_response.raise_for_status.side_effect = HTTPError("Error message")
+        failed_response.status_code = 500
+
+        failed_response1 = Mock(spec=Response)
+        failed_response1.raise_for_status.side_effect = HTTPError("Error message")
+        failed_response1.status_code = 500
+
+        failed_response2 = Mock(spec=Response)
+        failed_response2.raise_for_status.side_effect = HTTPError("Error message")
+        failed_response2.status_code = 500
+        # succes shuold never be reached
+        successful_response = Mock(spec=Response)
+        successful_response.raise_for_status.return_value = None
+        successful_response.json.return_value = {"key": "value"}
+
+        mock_session().__enter__().request.side_effect = [
+            HTTPError(response=failed_response),
+            HTTPError(response=failed_response1),
+            HTTPError(response=failed_response2),
+        ] * n_failures
+
+        with pytest.raises(tenacity.RetryError):
+            client._execute("hdsf", "GET")
+
+        # assert mock_session.return_value.request.call_count == n_failures
 """
