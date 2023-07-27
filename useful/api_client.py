@@ -13,6 +13,7 @@ from utils.http_utils import (
     url_is_valid,
     TRANSIENT_FAILURE_RESPONSE_CODES,
 )
+from utils.logging import BaseFilter
 
 
 _MAX_RETRY_COUNT = 3
@@ -21,6 +22,7 @@ _ALLOWED_HTTP_COMMANDS = {"GET", "POST", "PUT", "DELETE"}
 # create logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+logger.addFilter(BaseFilter())
 
 
 # main class
