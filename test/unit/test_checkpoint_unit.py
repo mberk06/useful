@@ -4,7 +4,7 @@ import json
 import tempfile
 from unittest.mock import mock_open, patch
 
-from utils.checkpoint import Checkpoint, ExampleDataclass
+from useful.checkpoint import Checkpoint, ExampleDataclass
 
 N_TOTAL_RECORDS = 3
 
