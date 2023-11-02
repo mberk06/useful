@@ -50,3 +50,21 @@ from useful import AddSecretToDatabricksAPI
 databricks_client = AddSecretToDatabricksAPI(host="XXX", token=SecretStr("XXX"))
 databricks_client.put_secret_safe(scope="berk", key="pat", value=SecretStr("XXX"))
 ```
+
+## useful/checkpoint.py
+This module allows you to incrementally store a json-serializable dataclass object in a 
+JSON file.
+
+```python
+from useful import Checkpoint, ExampleDataclass
+
+# Step 1: overwrite ExampleDataclass. It must be imported into the checkpoint.py file and all references must be modified.
+
+# Step 2: run the checkpoint
+checkpoint = Checkpoint("x.json", 2)
+checkpoint.append(dataclass_object_1)
+checkpoint.append(dataclass_object_2)
+assert checkpoint.is_complete() == 2
+
+# Step 3: delete the checkpoint manually
+```
