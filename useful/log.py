@@ -1,6 +1,10 @@
 import logging
 
 
+class FilterPy4JClientServer(logging.Filter):
+    def filter(self, record):
+        return 'py4j.clientserver' not in record.name and 'py4j.clientserver' not in record.message
+
 def get_or_create_logger(name: str = None) -> logging.Logger:
     """Get or create a logger with a given name, or use the default logger if no name is provided.
 
@@ -11,33 +15,33 @@ def get_or_create_logger(name: str = None) -> logging.Logger:
         _logger = init_logger('my_logger') # For a named logger
 
     """
+
+    logging.getLogger("py4j").setLevel(logging.ERROR) # Set py4j logs to ERROR
+
     logger = logging.getLogger(name)
 
-    # If the logger has handlers, it has already been set up, so return it.
     if logger.hasHandlers():
         return logger
 
-    # Set the logger level
     logger.setLevel(logging.DEBUG)
 
-    # Define handlers
     info_handler = logging.StreamHandler()
     info_handler.setLevel(logging.INFO)
     error_handler = logging.StreamHandler()
     error_handler.setLevel(logging.ERROR)
 
-    # Define formatter
-    local_time_format = logging.Formatter(
+    formatter = logging.Formatter(
         "%(asctime)s - %(levelname)s - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    # Set formatter for handlers
-    info_handler.setFormatter(local_time_format)
-    error_handler.setFormatter(local_time_format)
+    info_handler.setFormatter(formatter)
+    error_handler.setFormatter(formatter)
 
-    # Add handlers to the logger
     logger.addHandler(info_handler)
     logger.addHandler(error_handler)
+
+    filter_py4j = FilterPy4JClientServer()
+    logger.addFilter(filter_py4j)
 
     return logger
