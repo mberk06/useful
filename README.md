@@ -68,3 +68,12 @@ assert checkpoint.is_complete() == 2
 
 # Step 3: delete the checkpoint manually
 ```
+
+## useful/log.py
+Example get_or_create singleton for instantiating a logger.
+
+```python
+from useful.log import get_or_create_logger
+
+_logger = get_or_create_logger()
+```
